@@ -54,7 +54,7 @@ services:
         value: sqlite:///app.db
     
     # Automatic deployment on git push
-    autoDeploy: true
+    autoDeploy: false
     
     # Branch to deploy from
     branch: main
@@ -104,7 +104,7 @@ services:
         value: 1; mode=block
     
     # Automatic deployment on git push
-    autoDeploy: true
+    autoDeploy: false
     
     # Branch to deploy from
     branch: main
