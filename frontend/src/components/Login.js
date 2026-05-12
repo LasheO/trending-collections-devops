@@ -143,7 +143,7 @@ function Login() {
       }
     } catch (error) {
       // Handle network or other errors
-      console.error('Error:', error);
+      // console.error('Error:', error); // Removed for production build
       setErrorMessage('Error connecting to backend');
     } finally {
       // Reset loading state regardless of outcome

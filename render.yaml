@@ -65,7 +65,6 @@ services:
   - type: web
     name: trending-collections-frontend
     env: static
-    region: oregon
     plan: free
     
     # Build configuration for React
