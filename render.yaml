@@ -1,0 +1,134 @@
+# Render Blueprint Configuration
+#
+# This file defines the infrastructure for deploying the Trending Collections
+# application on Render. It specifies the services, build commands, and
+# environment variables needed for deployment.
+#
+# Documentation: https://render.com/docs/blueprint-spec
+#
+# Author: Lashe Onamusi
+# Date: December 2026
+# Purpose: University DevOps Assignment - Deployment Configuration
+
+# ==============================================================================
+# SERVICES
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # Backend Web Service (Flask API)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: trending-collections-backend
+    env: python
+    region: oregon  # Choose region closest to your users
+    plan: free      # Free tier for university project
+    
+    # Build configuration
+    buildCommand: |
+      cd backend
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    
+    # Start command (use Gunicorn for production)
+    startCommand: |
+      cd backend
+      python init_db.py
+      gunicorn --bind 0.0.0.0:$PORT --workers 4 app:app
+    
+    # Health check endpoint
+    healthCheckPath: /api/health
+    
+    # Environment variables
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      
+      - key: JWT_SECRET_KEY
+        generateValue: true  # Render generates secure random value
+      
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      
+      - key: SQLALCHEMY_DATABASE_URI
+        value: sqlite:///app.db
+    
+    # Automatic deployment on git push
+    autoDeploy: true
+    
+    # Branch to deploy from
+    branch: main
+
+  # ----------------------------------------------------------------------------
+  # Frontend Static Site (React App)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: trending-collections-frontend
+    env: static
+    region: oregon
+    plan: free
+    
+    # Build configuration for React
+    buildCommand: |
+      cd frontend
+      npm ci
+      npm run build
+    
+    # Static files directory
+    staticPublishPath: ./frontend/build
+    
+    # Custom routing for React Router
+    # All routes should serve index.html for client-side routing
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    
+    # Environment variables for build
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+      
+      - key: REACT_APP_API_URL
+        # Update this after deploying backend
+        value: https://trending-collections-backend.onrender.com
+    
+    # Headers for security
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+    
+    # Automatic deployment on git push
+    autoDeploy: true
+    
+    # Branch to deploy from
+    branch: main
+
+# ==============================================================================
+# DEPLOYMENT NOTES
+# ==============================================================================
+#
+# 1. Connect your GitHub repository to Render
+# 2. Render will automatically detect this file
+# 3. Follow the prompts to create the services
+# 4. After backend is deployed, update REACT_APP_API_URL with the actual URL
+# 5. Redeploy frontend with updated API URL
+#
+# Deployment Flow:
+#   Push to GitHub → Render detects changes → Runs tests in CI/CD →
+#   Builds application → Deploys to production → Health check verification
+#
+# Free Tier Limitations:
+#   - Services spin down after 15 minutes of inactivity
+#   - First request after spin-down may take 30-60 seconds
+#   - 750 hours per month across all services
+#   - Sufficient for university project demonstration
+#
+# ==============================================================================
