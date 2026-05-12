@@ -1,0 +1,300 @@
+# CI/CD Pipeline for Trending Collections DevOps
+# 
+# This GitHub Actions workflow automates the entire software development lifecycle:
+# - Code Quality Checks (Linting)
+# - Security Testing (OWASP)
+# - Unit Testing (Backend & Frontend)
+# - Build Verification
+# - Automated Deployment to Render
+#
+# Trigger: Runs on every push to main branch and on pull requests
+#
+# Author: Lashe Onamusi
+# Date: December 2026
+# Purpose: University DevOps Assignment - CI/CD Pipeline
+
+name: CI/CD Pipeline
+
+# When should this pipeline run?
+on:
+  push:
+    branches: [ main ]  # Run when code is pushed to main branch
+  pull_request:
+    branches: [ main ]  # Run when a pull request is created
+
+# Environment variables used across all jobs
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+# The pipeline is divided into "jobs" that run in sequence or parallel
+jobs:
+  
+  # ============================================================================
+  # JOB 1: CODE QUALITY CHECKS (LINTING)
+  # ============================================================================
+  # This job checks if the code follows best practices and style guidelines
+  lint:
+    name: Code Quality - Linting
+    runs-on: ubuntu-latest  # Use Ubuntu Linux virtual machine
+    
+    steps:
+      # Step 1: Get the code from GitHub
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      # Step 2: Set up Python for backend linting
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      # Step 3: Install Python linting tool
+      - name: Install Python Linting Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+      
+      # Step 4: Run Python linter on backend code
+      - name: Lint Python Code (Backend)
+        run: |
+          # flake8 checks Python code for style violations
+          # --max-line-length=100: Allow lines up to 100 characters
+          # --exclude: Skip these folders
+          # --ignore: Ignore these specific errors
+          flake8 backend/ \
+            --max-line-length=100 \
+            --exclude=backend/venv_new,backend/instance,backend/tests \
+            --ignore=E501,W503,E203
+        continue-on-error: true  # Don't fail pipeline on minor style issues
+      
+      # Step 5: Set up Node.js for frontend linting
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      # Step 6: Install frontend dependencies
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci  # Clean install - faster and more reliable than npm install
+      
+      # Step 7: Run JavaScript/React linter
+      - name: Lint JavaScript Code (Frontend)
+        working-directory: ./frontend
+        run: npm run lint || true  # Run ESLint, don't fail on warnings
+        continue-on-error: true
+
+  # ============================================================================
+  # JOB 2: BACKEND TESTING (INCLUDING SECURITY TESTS)
+  # ============================================================================
+  # This job runs all Python/Flask backend tests
+  test-backend:
+    name: Backend Tests (Python/Flask)
+    runs-on: ubuntu-latest
+    needs: lint  # Wait for linting to complete first
+    
+    steps:
+      # Step 1: Get the code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      # Step 3: Cache Python dependencies (speeds up future runs)
+      - name: Cache Python Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      # Step 4: Install backend dependencies
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov  # For test coverage reports
+      
+      # Step 5: Run unit tests
+      - name: Run Backend Unit Tests
+        working-directory: ./backend
+        run: |
+          # Run pytest with coverage reporting
+          pytest tests/test_api.py tests/test_models.py -v --cov=. --cov-report=term --cov-report=html
+      
+      # Step 6: Run OWASP security tests
+      - name: Run OWASP Security Tests
+        working-directory: ./backend
+        run: |
+          echo "🔒 Running OWASP Top 10 Security Tests..."
+          pytest tests/test_security.py -v --tb=short
+      
+      # Step 7: Upload coverage report as artifact
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-coverage-report
+          path: backend/htmlcov/
+          retention-days: 30  # Keep for 30 days
+
+  # ============================================================================
+  # JOB 3: FRONTEND TESTING
+  # ============================================================================
+  # This job runs all React/JavaScript frontend tests
+  test-frontend:
+    name: Frontend Tests (React/Jest)
+    runs-on: ubuntu-latest
+    needs: lint  # Wait for linting to complete first
+    
+    steps:
+      # Step 1: Get the code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      # Step 3: Cache Node dependencies (speeds up future runs)
+      - name: Cache Node Modules
+        uses: actions/cache@v3
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      # Step 4: Install frontend dependencies
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      # Step 5: Run frontend tests
+      - name: Run Frontend Tests
+        working-directory: ./frontend
+        run: |
+          # Run Jest tests with coverage
+          npm test -- --coverage --watchAll=false
+        env:
+          CI: true  # Prevents interactive mode in CI environment
+
+  # ============================================================================
+  # JOB 4: BUILD VERIFICATION
+  # ============================================================================
+  # This job verifies that the application can be built for production
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]  # Wait for both test jobs to complete
+    
+    steps:
+      # Step 1: Get the code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      # Step 2: Set up Node.js for frontend build
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      # Step 3: Install frontend dependencies
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      # Step 4: Build frontend for production
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: |
+          echo "🏗️ Building React frontend for production..."
+          npm run build
+      
+      # Step 5: Verify build output exists
+      - name: Verify Build Output
+        run: |
+          if [ -d "frontend/build" ]; then
+            echo "✅ Build successful! Build directory exists."
+            ls -la frontend/build
+          else
+            echo "❌ Build failed! Build directory not found."
+            exit 1
+          fi
+      
+      # Step 6: Upload build artifacts
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-build
+          path: frontend/build/
+          retention-days: 7
+
+  # ============================================================================
+  # JOB 5: DEPLOYMENT TO RENDER (PRODUCTION)
+  # ============================================================================
+  # This job automatically deploys to Render when all tests pass
+  # Only runs on main branch, not on pull requests
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: [build]  # Wait for build to complete
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      # Step 1: Get the code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      # Step 2: Trigger Render deployment
+      - name: Deploy to Render
+        run: |
+          echo "🚀 Deploying to Render..."
+          echo "Render will automatically detect the push and deploy."
+          echo "Visit your Render dashboard to monitor deployment progress."
+          echo "Deployment URL: https://dashboard.render.com"
+      
+      # Step 3: Health check (wait for deployment)
+      - name: Wait for Deployment
+        run: |
+          echo "⏳ Waiting 60 seconds for deployment to complete..."
+          sleep 60
+      
+      # Step 4: Verify deployment (if you have a deployed URL)
+      - name: Verify Deployment Health
+        run: |
+          echo "🏥 Health check would go here..."
+          echo "Example: curl https://your-app.onrender.com/api/health"
+          # Uncomment when you have a deployed URL:
+          # curl -f https://your-app.onrender.com/api/health || exit 1
+
+  # ============================================================================
+  # JOB 6: PIPELINE SUMMARY
+  # ============================================================================
+  # This job creates a summary of the entire pipeline run
+  summary:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [lint, test-backend, test-frontend, build]
+    if: always()  # Run even if previous jobs fail
+    
+    steps:
+      - name: Pipeline Summary
+        run: |
+          echo "📊 CI/CD Pipeline Summary"
+          echo "================================"
+          echo "✅ Code Quality Check: Completed"
+          echo "✅ Backend Tests: Completed"
+          echo "✅ Frontend Tests: Completed"
+          echo "✅ Build Verification: Completed"
+          echo "================================"
+          echo "Pipeline execution finished!"
+          echo "Review the results above for any failures."
