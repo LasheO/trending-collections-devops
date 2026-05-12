@@ -256,19 +256,29 @@ jobs:
       
       # Step 2: Trigger Backend Deployment
       - name: Deploy Backend to Render
-        if: secrets.RENDER_DEPLOY_HOOK_BACKEND != ''
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
         run: |
-          echo "🚀 Triggering backend deployment on Render..."
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
-          echo "✅ Backend deployment triggered successfully"
+          if [ -n "$DEPLOY_HOOK" ]; then
+            echo "🚀 Triggering backend deployment on Render..."
+            curl -X POST "$DEPLOY_HOOK"
+            echo "✅ Backend deployment triggered successfully"
+          else
+            echo "⚠️  Backend deploy hook not configured (skipping)"
+          fi
       
       # Step 3: Trigger Frontend Deployment
       - name: Deploy Frontend to Render
-        if: secrets.RENDER_DEPLOY_HOOK_FRONTEND != ''
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}
         run: |
-          echo "🚀 Triggering frontend deployment on Render..."
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}"
-          echo "✅ Frontend deployment triggered successfully"
+          if [ -n "$DEPLOY_HOOK" ]; then
+            echo "🚀 Triggering frontend deployment on Render..."
+            curl -X POST "$DEPLOY_HOOK"
+            echo "✅ Frontend deployment triggered successfully"
+          else
+            echo "⚠️  Frontend deploy hook not configured (skipping)"
+          fi
       
       # Step 4: Deployment Status
       - name: Deployment Complete
