@@ -254,27 +254,35 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
       
-      # Step 2: Trigger Render deployment
-      - name: Deploy to Render
+      # Step 2: Trigger Backend Deployment
+      - name: Deploy Backend to Render
+        if: secrets.RENDER_DEPLOY_HOOK_BACKEND != ''
         run: |
-          echo "🚀 Deploying to Render..."
-          echo "Render will automatically detect the push and deploy."
-          echo "Visit your Render dashboard to monitor deployment progress."
-          echo "Deployment URL: https://dashboard.render.com"
+          echo "🚀 Triggering backend deployment on Render..."
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
+          echo "✅ Backend deployment triggered successfully"
       
-      # Step 3: Health check (wait for deployment)
-      - name: Wait for Deployment
+      # Step 3: Trigger Frontend Deployment
+      - name: Deploy Frontend to Render
+        if: secrets.RENDER_DEPLOY_HOOK_FRONTEND != ''
         run: |
-          echo "⏳ Waiting 60 seconds for deployment to complete..."
-          sleep 60
+          echo "🚀 Triggering frontend deployment on Render..."
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}"
+          echo "✅ Frontend deployment triggered successfully"
       
-      # Step 4: Verify deployment (if you have a deployed URL)
-      - name: Verify Deployment Health
+      # Step 4: Deployment Status
+      - name: Deployment Complete
         run: |
-          echo "🏥 Health check would go here..."
-          echo "Example: curl https://your-app.onrender.com/api/health"
-          # Uncomment when you have a deployed URL:
-          # curl -f https://your-app.onrender.com/api/health || exit 1
+          echo "================================"
+          echo "🎉 Deployment Triggered!"
+          echo "================================"
+          echo "📍 Monitor deployment status at:"
+          echo "   https://dashboard.render.com"
+          echo ""
+          echo "⏰ Render is now building and deploying your services"
+          echo "⏱️  This typically takes 3-5 minutes"
+          echo ""
+          echo "💡 Tip: Check your Render dashboard for real-time logs"
 
   # ============================================================================
   # JOB 6: PIPELINE SUMMARY
