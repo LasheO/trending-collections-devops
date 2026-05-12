@@ -1,0 +1,108 @@
+# Flake8 Configuration
+#
+# Flake8 is a Python linter that checks code quality and style.
+# It combines multiple tools: PyFlakes, pycodestyle, and McCabe complexity checker.
+#
+# What does it check?
+# - PEP 8 style guide compliance (Python's official style guide)
+# - Syntax errors
+# - Undefined names
+# - Code complexity
+#
+# Author: Lashe Onamusi
+# Date: December 2026
+# Purpose: University DevOps Assignment - Code Quality
+
+[flake8]
+
+# ==============================================================================
+# GENERAL SETTINGS
+# ==============================================================================
+
+# Maximum line length (default is 79, we allow 100)
+max-line-length = 100
+
+# Maximum cyclomatic complexity (how complex a function can be)
+# Lower = simpler code = better!
+max-complexity = 10
+
+# ==============================================================================
+# EXCLUSIONS
+# ==============================================================================
+
+# Directories to exclude from checking
+exclude =
+    .git,
+    __pycache__,
+    venv,
+    venv_new,
+    env,
+    ENV,
+    .venv,
+    instance,
+    build,
+    dist,
+    *.egg-info,
+    .pytest_cache,
+    htmlcov
+
+# Files to exclude
+per-file-ignores =
+    # Ignore import order in __init__.py files
+    __init__.py:F401
+    # Ignore line length in migration files (if you add them later)
+    migrations/*:E501
+
+# ==============================================================================
+# ERROR CODES TO IGNORE
+# ==============================================================================
+
+# Ignore specific error codes:
+ignore =
+    # E203: whitespace before ':' (conflicts with black formatter)
+    E203,
+    # E501: line too long (we set max-line-length instead)
+    E501,
+    # W503: line break before binary operator (old style, now acceptable)
+    W503,
+    # F401: imported but unused (useful for __init__.py)
+    # Removed from ignore to catch unused imports
+
+# ==============================================================================
+# WHAT TO CHECK
+# ==============================================================================
+
+# Check for specific error types
+select =
+    # E: PEP 8 errors
+    E,
+    # W: PEP 8 warnings
+    W,
+    # F: PyFlakes errors (syntax, undefined names)
+    F,
+    # C: McCabe complexity
+    C
+
+# ==============================================================================
+# REPORTING
+# ==============================================================================
+
+# Show source code for each error
+show-source = True
+
+# Show the specific error code
+show-pep8 = True
+
+# Count the number of occurrences of each error/warning
+count = True
+
+# Print total number of errors
+statistics = True
+
+# ==============================================================================
+# FORMATTING
+# ==============================================================================
+
+# Format for error messages
+# Example: ./app.py:12:5: E501 line too long (105 > 100 characters)
+format = %(path)s:%(row)d:%(col)d: %(code)s %(text)s
