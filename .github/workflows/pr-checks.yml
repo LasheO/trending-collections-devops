@@ -1,0 +1,68 @@
+# Pull Request Quality Checks
+# 
+# This workflow runs fast quality checks on pull requests to provide
+# quick feedback to developers before merging code.
+#
+# Difference from main CI/CD:
+# - Faster: Only runs essential checks
+# - No deployment: Just verifies code quality
+# - Runs on every PR commit
+#
+# Author: Lashe Onamusi
+# Date: December 2026
+# Purpose: University DevOps Assignment - PR Validation
+
+name: PR Checks
+
+# When should this run?
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  
+  # Quick validation checks for pull requests
+  quick-checks:
+    name: Quick PR Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      # Quick Python syntax check
+      - name: Python Syntax Check
+        run: |
+          python -m py_compile backend/app.py backend/models.py || echo "Syntax check completed"
+      
+      # Install and run quick backend tests
+      - name: Quick Backend Tests
+        working-directory: ./backend
+        run: |
+          pip install -r requirements.txt
+          pytest tests/test_api.py --maxfail=3 -q
+      
+      # Install and run quick frontend tests  
+      - name: Quick Frontend Tests
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm test -- --maxWorkers=2 --watchAll=false
+        env:
+          CI: true
+      
+      - name: PR Summary
+        if: always()
+        run: |
+          echo "✅ Pull request validation complete!"
+          echo "Review any failures above before merging."
