@@ -98,6 +98,11 @@ function Dashboard() {
    * 4. Extracts unique queries for the filter dropdown
    * 5. Handles any errors that occur during the process
    */
+  // Use REACT_APP_API_URL for production (Render), fallback to '' for local development
+  // In production: API_URL = 'https://trending-collections-backend.onrender.com'
+  // In development: API_URL = '' (uses the local proxy)
+  const API_URL = process.env.REACT_APP_API_URL || '';
+
   const fetchTrends = async () => {
     try {
       // Get authentication token
@@ -108,8 +113,8 @@ function Dashboard() {
         return;
       }
 
-      // Make authenticated API request
-      const response = await fetch('/api/trends', {
+      // Make authenticated API request to backend service
+      const response = await fetch(`${API_URL}/api/trends`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -241,8 +246,8 @@ function Dashboard() {
       }
 
       const url = editMode 
-        ? `/api/trends/${currentTrend.id}`
-        : '/api/trends';
+        ? `${API_URL}/api/trends/${currentTrend.id}`
+        : `${API_URL}/api/trends`;
       
       const method = editMode ? 'PUT' : 'POST';
 
@@ -296,7 +301,7 @@ function Dashboard() {
         return;
       }
 
-      const response = await fetch(`/api/trends/${id}`, {
+      const response = await fetch(`${API_URL}/api/trends/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

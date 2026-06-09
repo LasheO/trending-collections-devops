@@ -99,11 +99,16 @@ function Login() {
     setIsLoading(true);
     setErrorMessage('');
     setSuccessMessage('');
+
+    // Use REACT_APP_API_URL for production (Render), fallback to '' for local development
+    // In production: API_URL = 'https://trending-collections-backend.onrender.com'
+    // In development: API_URL = '' (uses the local proxy)
+    const API_URL = process.env.REACT_APP_API_URL || '';
     const endpoint = isLogin ? '/api/login' : '/api/register';
     
     try {
       // Send authentication request to backend
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
