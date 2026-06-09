@@ -86,6 +86,9 @@ function Dashboard() {
     fetchTrends();
     const adminStatus = localStorage.getItem('isAdmin') === 'true';
     setIsAdmin(adminStatus);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // fetchTrends is intentionally omitted - we only want this to run once on mount.
+  // Including it would cause an infinite loop as fetchTrends is defined in the component body.
   }, []);
 
   /**
