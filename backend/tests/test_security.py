@@ -1,18 +1,13 @@
 """
 OWASP Top 10 Security Test Suite
 
-This module tests the application's defenses against common web vulnerabilities
-as defined by the OWASP Top 10. These tests are critical for demonstrating
-security best practices in the DevOps pipeline.
-
 Tests cover:
 1. SQL Injection Prevention (A03:2021 - Injection)
 2. Broken Authentication Prevention (A07:2021 - Identification and Authentication Failures)
 3. Cross-Site Scripting (XSS) Prevention (A03:2021 - Injection)
 
 Author: Lashe Onamusi
-Date: December 2026
-Purpose: University DevOps Assignment - Security Testing
+Date: March 2026
 """
 
 import unittest

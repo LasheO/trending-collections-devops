@@ -3,14 +3,8 @@
 # This file contains instructions for Docker to build a container image
 # for the Flask backend application.
 #
-# What is a Docker container?
-# - A lightweight, standalone package that includes everything needed to run the app
-# - Code, runtime (Python), libraries, dependencies, configuration
-# - Runs consistently on any system (Mac, Windows, Linux, Cloud)
-#
 # Author: Lashe Onamusi
-# Date: December 2026
-# Purpose: University DevOps Assignment - Containerization
+# Date: March 2026
 
 # ==============================================================================
 # STAGE 1: BASE IMAGE
@@ -39,7 +33,6 @@ ENV PYTHONUNBUFFERED=1 \
 # ==============================================================================
 # STAGE 3: INSTALL DEPENDENCIES
 # ==============================================================================
-# Copy requirements file first (Docker caching optimization)
 # If requirements.txt doesn't change, Docker reuses this layer (faster builds)
 COPY requirements.txt .
 
@@ -59,7 +52,6 @@ COPY . .
 # ==============================================================================
 # STAGE 5: CREATE NON-ROOT USER (SECURITY BEST PRACTICE)
 # ==============================================================================
-# Don't run as root user (security vulnerability!)
 # Create a user called 'appuser' with no password
 RUN adduser --disabled-password --gecos '' appuser && \
     chown -R appuser:appuser /app
@@ -70,15 +62,11 @@ USER appuser
 # ==============================================================================
 # STAGE 6: EXPOSE PORT
 # ==============================================================================
-# Document which port the app listens on
-# (Doesn't actually publish the port - that's done at runtime)
 EXPOSE 5000
 
 # ==============================================================================
 # STAGE 7: HEALTH CHECK
 # ==============================================================================
-# Docker will periodically check if the container is healthy
-# If health check fails, Docker can restart the container
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:5000/api/health')" || exit 1
 

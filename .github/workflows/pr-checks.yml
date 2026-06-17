@@ -6,11 +6,10 @@
 # Difference from main CI/CD:
 # - Faster: Only runs essential checks
 # - No deployment: Just verifies code quality
-# - Runs on every PR commit
+# - Runs on every CR commit
 #
 # Author: Lashe Onamusi
-# Date: December 2026
-# Purpose: University DevOps Assignment - PR Validation
+# Date: March 2026
 
 name: PR Checks
 
@@ -21,7 +20,7 @@ on:
 
 jobs:
   
-  # Quick validation checks for pull requests
+  # Quick validation checks for all pull requests
   quick-checks:
     name: Quick PR Validation
     runs-on: ubuntu-latest
